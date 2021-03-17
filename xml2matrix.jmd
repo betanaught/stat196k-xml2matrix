@@ -1,0 +1,78 @@
+---
+title: H Assigment - Sampling Stream
+author: Brendan Wakefield
+date: 28 February 2021
+---
+```julia; echo=false; results="hidden"
+using Distributions, StatsPlots
+```
+# Warm Up
+
+1. __Why is it better to take a simple random sample, instead of just the first k rows?__
+Taking a SRS from our data is advantageous if we are trying to use a subset to learn anything useful about our full dataset. Similar (identical) to methods of statistical inference, ensuring our subset is randomly sampled (or knowing *how* we sampled) from the data allows us to infer traits about the data set as a whole from our subset, with knowledge about our confidence in those estimates. That is, if our sample has been extracted randomly, we can make estimates on the "population" (the full data set) analagously to parameter estimates in statistical inference, such as mean number of occurences, standard deviations, etc. Taking the first k rows will introduce bias based on how the full data set is structured, since we are starting from the beginning and only proceeding to row k. For example, if a column is a nominal factor and the data set is ordered alphabetically by the factor levels, we might only sample one level if there are more than k observations of that level alone.
+1. __Suppose we halt reservoir sampling at element m, with m < n, where n is the size of the entire stream. Can this be a sample of the entire data? Explain.__
+No, this cannot be a sample of the entire data because there could be elements in the dataset that have not had a chance to appear in the sample yet if m < n. If my reservoir is 10 elements, my dataset is 1:20, and I sample over 1:18, then elements 19 and 20 have a probability of 0 of being included in the sample, so I would define this as a sample of the stream 1:18 and not 1:20. Similar to the last question, if I have a hierarchical dataset ordered alphabetically by some nominal factor like 'Customer' and I don't run a reservoir sample over all rows of the data set, then my reservoir will have no chance of including observations (rows) with Customer names towards the end of the alphabet.
+1. __I [read on the internet](https://unix.stackexchange.com/a/108604/456485) that `shuf -n 100 data.txt` uses reservoir sampling. The following commands each produce 100 lines from `data.txt`. For each command, will it produce a simple random sample of the lines of the file `data.txt`? Why or why not?__
+```
+head -n 100 data.txt | shuf                 # 1
+shuf -n 100 data.txt | head -n 100          # 2
+shuf -n 200 data.txt | head -n 100          # 3
+shuf -n 100 data.txt | head -n 100  | sort  # 4
+```
+Command #1 will not create a SRS of `data.txt` because it is only shuffling the first 100 lines of the data. Command #2 should work, as it is creating a reservoir sample 100 lines long, then displaying the entire reservoir with a call to `head` for the same number of lines. Command #3 should generate a SRS because it is just displaying the first half of the reservoir (and AFAIK chopping a random sample in half is still a random sample). Command #4 is tricky; the values themselves will have been sampled randomly, but the values are now ordered. Summary statistics on the data, like mean, SD, variance, etc. will still be of a random sample, but it's important to recognize that these are now ordered.
+
+# Implement Reservoir Sampling
+
+(10 pts)
+
+Implement simple or optimal [reservoir sampling](https://en.wikipedia.org/wiki/Reservoir_sampling) by writing a program in Julia called `shuf.jl` that works like a simple version of `shuf`.
+It should accept one positional argument with the number of elements to sample, and default to 100.
+
+Verify that it works for the following cases:
+
+1. `seq 10 | julia shuf.jl` shuffles the integers from 1 to 10. __Yes!__
+1. `seq 10 | shuf | julia shuf.jl` shuffles the integers from 1 to 10. __Yes!__
+1. `seq 100 | julia shuf.jl 20` samples 20 random integers without replacement from 1 to 100. __Yes!__
+1. `seq 1000 | julia shuf.jl` samples 100 random integers without replacement from 1 to 1000. __Yes!__
+1. `seq -f "%.0f" 1e7 | julia shuf.jl` samples 100 random integers without replacement from 1 to 10 million. __Yes!__
+
+(I ran these on my local machine using `gshuf` for `shuf`. I didn't include output to save space.)
+
+
+# Hypothesis Testing
+
+(7 pts)
+
+_QQ Plot Comparing Reservoir Sampling Code to Uniform Distribution_
+
+```julia
+using Distributions
+using StatsPlots
+
+# u = Normal()
+u = Uniform()
+n=100
+norm_sample = rand(u, n)
+
+# Output from shuf.jl
+output = ["386", "670", "365", "289", "194", "472", "7", "626", "673", "808", "110", "524", "758", "767", "357", "239", "669", "438", "770", "558", "109", "22", "721", "830", "549", "522", "398", "719", "935", "327", "856", "963", "351", "516", "319", "854", "311", "38", "39", "679", "450", "780", "777", "44", "759", "628", "368", "349", "729", "393", "213", "710", "735", "145", "291", "104", "657", "58", "465", "819", "413", "62", "224", "469", "917", "977", "921", "979", "609", "200", "197", "487", "809", "125", "330", "702", "633", "930", "79", "283", "144", "821", "402", "379", "342", "440", "798", "736", "602", "90", "91", "218", "990", "886", "769", "447", "158", "98", "661", "618"]
+data = [parse(Int, x) for x in output]
+
+qqplot(norm_sample, data)
+```
+These comparinson of the quantiles appears linear, implying my shuf.jl reservoir sampling algorithm does indeed sample elemnts from the data stream according to a uniform distribution (before inserting to the reservoir).
+
+# Extra Credit
+
+(1 pt)
+
+Minimal points, maximal glory.
+
+Math option:
+Prove that reservoir sampling produces simple random samples.
+
+Programming option:
+Wikipedia claims simple reservoir sampling is slow.
+Is it?
+Check by implementing another variation of reservoir sampling and comparing speeds.
+
