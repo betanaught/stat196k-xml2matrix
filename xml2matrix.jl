@@ -38,7 +38,7 @@ function main()
 
     xml_corpus = Corpus(map(extract_desc, file_list))
     update_lexicon!(xml_corpus)
-    xml_dtm = DocumentTermMatrix(xml_corpus)
+    xml_dtm = dtm(xml_corpus)
 
     xml_dict = Dict()
     for file in file_list
