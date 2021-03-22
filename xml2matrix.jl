@@ -1,7 +1,6 @@
-using Debugger
 using EzXML
 using TextAnalysis
-using DataFrames
+using Serialization
 
 function extract_name(xml_file)
     xml_string = EzXML.readxml(xml_file)
@@ -19,7 +18,6 @@ function extract_size(xml_file)
 end
 
 function extract_desc(xml_file)
-    processed_file_count = 0
     xml_string = EzXML.readxml(xml_file)
     org_desc = findfirst("//Desc/text()", xml_string)
     if isnothing(org_desc)
@@ -31,16 +29,27 @@ function extract_desc(xml_file)
     stem!(doc)
     text(doc)
     
-    processed_file_count += 1
-    print(string("Files successfully processed: ", processed_file_count))
     return doc
 end
 
-data_dir = "./data/"
-file_list = [data_dir * i for i in readdir(data_dir)]
+function main()
+    data_dir = "./data/"
+    file_list = [data_dir * i for i in readdir(data_dir)]
 
-xml_corpus = Corpus(map(extract_desc, file_list))
-update_lexicon!(xml_corpus)
-xlm_dtm = DocumentTermMatrix(xml_corpus)
+    xml_corpus = Corpus(map(extract_desc, file_list))
+    update_lexicon!(xml_corpus)
+    xml_dtm = DocumentTermMatrix(xml_corpus)
 
-serialize("xml_dtm.jld", xml_dtm)
+    xml_dict = Dict()
+    for file in file_list
+        push!(xml_dict, extract_name(file) => extract_size(file))
+    end
+    xml_dict
+
+    println(string("Total Dictionary entries: ", length(xml_dict)))
+    println(string("Total descriptions extracted: ", length(xml_corpus)))
+    serialize("xml_dtm.jld", xml_dtm)
+    serialize("xml_dict.jld", xml_dict)
+end
+
+main()
