@@ -42,7 +42,7 @@ function main()
 
     xml_dict = Dict()
     for file in file_list
-        push!(xml_dict, extract_name(file) => extract_size(file))
+        xml_dict[extract_name(file)] = extract_size(file)
     end
     xml_dict
 
