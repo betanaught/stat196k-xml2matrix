@@ -48,7 +48,13 @@ function extract_desc(xml_file)
         test_string = findfirst("//DescriptionProgramSrvcAccomTxt/text()")
     end
     if !isnothing(test_string)
-        org_desc = nodecontent(test_string)
+        # org_desc = nodecontent(test_string)
+        ######### TextAnalysis processing within function START ###########
+        org_desc = StringDocument(nodecontent(test_string))
+        prepare!(org_desc, strip_punctuation)
+        remove_case!(org_desc)
+        stem!(org_desc)
+        return org_desc
     else
         org_desc = nothing
     end
@@ -62,38 +68,25 @@ function extract_desc(xml_file)
 end
 
 function generate_xml_dict(file)
-    Dict("file"     => file,
-         "org_name" => extract_name(file),
-         "org_rev"  => extract_revenue(file),
-         "org_desc" => extract_desc(file))
-    end
+    #if !isnothing(extract_desc(file))
+        Dict("file"     => file,
+            "org_name" => extract_name(file),
+            "org_rev"  => extract_revenue(file),
+            "org_desc" => extract_desc(file))
+    #end
 end
 
 dict_array = map(generate_xml_dict, readdir())
 
-function main(data_dir = "./data/")
-    data_dir = "./data/"
-    file_list = [data_dir * i for i in readdir(data_dir)]
+xml_corpus = Corpus(dict_array)
+update_lexicon!(xml_corpus)
+xml_dtm = dtm(xml_corpus)
 
-    xml_corpus = Corpus(map(extract_desc, file_list))
-    update_lexicon!(xml_corpus)
-    xml_dtm = dtm(xml_corpus)
+println(string("Total Dictionary entries: ", length(xml_dict)))
+println(string("Total descriptions extracted: ", length(xml_corpus)))
+serialize("../xml_dtm.jld", xml_dtm)
+serialize("../xml_dict.jld", xml_dict)
 
-    xml_dict = Dict()
-    for file in file_list
-        xml_dict[extract_name(file)] = extract_size(file)
-    end
-    xml_dict
-
-    println(string("Total Dictionary entries: ", length(xml_dict)))
-    println(string("Total descriptions extracted: ", length(xml_corpus)))
-    serialize("../xml_dtm.jld", xml_dtm)
-    serialize("../xml_dict.jld", xml_dict)
-end
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    main()
-end
 
 ## SINGLE FILE TESTING ---------------------------------------------------------
 test_file = readdir()[1]
