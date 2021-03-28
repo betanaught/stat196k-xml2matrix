@@ -84,8 +84,9 @@ xml_dtm = dtm(xml_corpus)
 
 println(string("Total Dictionary entries: ", length(dict_array)))
 println(string("Total descriptions extracted: ", length(xml_corpus)))
-serialize("../xml_dtm.jld", xml_dtm)
-serialize("../xml_dict.jld", xml_dict)
+serialize("xml_dtm.jld", xml_dtm)
+serialize("xml_dict.jld", xml_dict)
+serialize("xml_corpus.jld", xml_corpus)
 
 
 ## SINGLE FILE TESTING ---------------------------------------------------------
@@ -94,3 +95,4 @@ test_xml_dict = Dict("file" => test_file,
                 "org_name" => extract_name(test_file),
                 "org_rev"  => extract_revenue(test_file),
                 "org_desc" => extract_desc(test_file))
+text(test_xml_dict["org_desc"])
