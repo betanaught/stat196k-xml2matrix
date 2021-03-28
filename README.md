@@ -118,7 +118,6 @@ dict_array.jld              100%  126MB   7.1MB/s   00:17
 xml_corpus.jld              100%   83MB   6.6MB/s   00:12    
 xml_dtm.jld                 100%  135MB   7.3MB/s   00:18 
 ```
-# ------------------------------------------------------------------------------
 # Julia Code
 ```julia
 using EzXML
