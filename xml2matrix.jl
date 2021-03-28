@@ -10,7 +10,7 @@ function extract_name(xml_file)
     if !isnothing(test_string)
         org_name = nodecontent(test_string)
     else
-        org_name = nothing
+        org_name = ""
     end
     return org_name
 end
@@ -28,7 +28,7 @@ function extract_revenue(xml_file)
     if !isnothing(test_string)
         org_rev = nodecontent(test_string)
     else
-        org_rev = nothing
+        org_rev = ""
     end
     return org_rev
 end
@@ -56,7 +56,7 @@ function extract_desc(xml_file)
         stem!(org_desc)
         return org_desc
     else
-        org_desc = nothing
+        org_desc = StringDocument("")
     end
         # doc = StringDocument(nodecontent(org_desc))
         # prepare!(doc, strip_punctuation)
@@ -76,13 +76,13 @@ function generate_xml_dict(file)
     #end
 end
 
-dict_array = map(generate_xml_dict, readdir())
-
-xml_corpus = Corpus(dict_array)
+dict_array = map(generate_xml_dict, readdir("2019", join = true))
+xml_doc_array = [i["org_desc"] for i in dict_array]
+xml_corpus = Corpus(xml_doc_array)
 update_lexicon!(xml_corpus)
 xml_dtm = dtm(xml_corpus)
 
-println(string("Total Dictionary entries: ", length(xml_dict)))
+println(string("Total Dictionary entries: ", length(dict_array)))
 println(string("Total descriptions extracted: ", length(xml_corpus)))
 serialize("../xml_dtm.jld", xml_dtm)
 serialize("../xml_dict.jld", xml_dict)
@@ -90,7 +90,7 @@ serialize("../xml_dict.jld", xml_dict)
 
 ## SINGLE FILE TESTING ---------------------------------------------------------
 test_file = readdir()[1]
-xml_dict = Dict("file" => test_file,
+test_xml_dict = Dict("file" => test_file,
                 "org_name" => extract_name(test_file),
                 "org_rev"  => extract_revenue(test_file),
                 "org_desc" => extract_desc(test_file))
